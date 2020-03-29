@@ -27,6 +27,7 @@ export const typeDef = gql`
 
   extend type Mutation {
     register(id: String, email: String, password: String, signKey: String): Boolean!
+    login(id: String, password: String): UserWithToken!
   }
 `;
 
@@ -83,15 +84,13 @@ export const resolvers = {
         signKey: User['signKey'];
       }
     ) => {
-      if (!(id && email && password && signKey)) throwError('Invalid Data');
-
       const userRepository: Repository<User> = getRepository(User);
 
       await findById(userRepository, id).then((user: User) => {
-        if (user) throwError('Exist id');
+        if (user) throwError('이미 존재하는 아이디입니다.');
       });
       await findByEmail(userRepository, email).then((user: User) => {
-        if (user) throwError('Exist email');
+        if (user) throwError('이미 존재하는 이메일입니다.');
       });
 
       const user: User = await userRepository
@@ -103,7 +102,7 @@ export const resolvers = {
         .catch(catchDBError());
 
       if (!user) {
-        throwError('Invalid Data');
+        throwError('일치하는 회원 키가 없습니다.');
       }
 
       const passwordKey: string = randomstring.generate(64);
@@ -120,6 +119,33 @@ export const resolvers = {
       await user.save().catch(catchDBError());
 
       return true;
+    },
+    login: async (
+      _: any,
+      {
+        id,
+        password
+      }: {
+        id: User['id'];
+        password: User['password'];
+      }
+    ) => {
+      const userRepository: Repository<User> = getRepository(User);
+
+      const user: User = await findById(userRepository, id);
+
+      if (!user) throwError('존재하지 않는 유저입니다.');
+
+      const encryptionPassword: User['password'] = passwordEncryption(password, user.passwordKey);
+
+      if (user.password !== encryptionPassword) throwError('비밀번호가 일치하지 않습니다.');
+
+      const token: string = issueToken(user.pk);
+
+      return {
+        user,
+        token
+      };
     }
   }
 };

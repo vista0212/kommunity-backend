@@ -28,7 +28,10 @@ app.use(
   '/graphql',
   graphqlHTTP({
     schema,
-    graphiql: true
+    graphiql: true,
+    formatError: err => {
+      return { message: err.message };
+    }
   })
 );
 
