@@ -33,6 +33,9 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: false })
   public name: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  public image: string;
+
   @Column('timestamptz')
   @CreateDateColumn()
   public createdAt: Date;

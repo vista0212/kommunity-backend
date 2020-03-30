@@ -16,6 +16,7 @@ export const typeDef = gql`
     id: String!
     email: String!
     name: String!
+    image: String!
     createdAt: Date!
     updatedAt: Date!
   }
