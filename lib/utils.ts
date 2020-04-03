@@ -16,14 +16,13 @@ export const verifyToken: (token: string) => User | void = token => {
       if (err) {
         switch (err.name) {
           case 'JsonWebTokenError':
-            console.log(1);
-            throwError('Token Error');
+            throwError('잘못된 토큰입니다.');
           case 'TokenExpiredError':
-            throwError('Token Expired');
+            throwError('토큰이 만료되었습니다.');
           case 'NotBeforeError':
             throwError('Not Before Error');
           default:
-            throwError('Undefined Error');
+            throwError('알 수 없는 오류입니다.');
         }
       }
 

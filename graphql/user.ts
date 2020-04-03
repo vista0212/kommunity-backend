@@ -1,12 +1,14 @@
 import { Repository, getRepository } from 'typeorm';
 import { gql } from 'apollo-server-express';
-import { pbkdf2, pbkdf2Sync, verify } from 'crypto';
+import { pbkdf2Sync } from 'crypto';
 import * as dotenv from 'dotenv';
 import * as randomstring from 'randomstring';
 import * as jwt from 'jsonwebtoken';
+import s3 from '../lib/s3';
 
 import { User, findByPk, findByEmail, findById } from '../database/entities/user.entity';
 import { throwError, catchDBError } from '../lib/error';
+import { verifyToken } from '../lib/utils';
 
 dotenv.config();
 
@@ -16,7 +18,7 @@ export const typeDef = gql`
     id: String!
     email: String!
     name: String!
-    image: String!
+    image: String
     createdAt: Date!
     updatedAt: Date!
   }
@@ -26,9 +28,14 @@ export const typeDef = gql`
     token: String!
   }
 
+  extend type Query {
+    getUser(token: String): User
+  }
+
   extend type Mutation {
     register(id: String, email: String, password: String, signKey: String): Boolean!
     login(id: String, password: String): UserWithToken!
+    image(file: Upload!): Boolean!
   }
 `;
 
@@ -70,6 +77,26 @@ const issueToken: (pk: User['pk']) => string = pk => {
 };
 
 export const resolvers = {
+  Query: {
+    getUser: async (
+      _: any,
+      {
+        token
+      }: {
+        token: string;
+      }
+    ) => {
+      const userRepository: Repository<User> = getRepository(User);
+
+      const pk: User['pk'] = (verifyToken(token) as User).pk;
+
+      const user: User = await findByPk(userRepository, pk);
+
+      if (!user) throwError('잘못된 요청입니다.');
+
+      return user;
+    }
+  },
   Mutation: {
     register: async (
       _: any,
@@ -147,6 +174,26 @@ export const resolvers = {
         user,
         token
       };
+    },
+    image: async (_: any, args: any) => {
+      try {
+        const file = args.file.file;
+
+        const { createReadStream, filename, mimetype } = file;
+        const fileStream = createReadStream();
+
+        const uploadParams = {
+          Bucket: 'kommunity-s3',
+          Key: Date.now().toString() + filename,
+          Body: fileStream
+        };
+
+        await s3.upload(uploadParams).promise();
+
+        return true;
+      } catch (err) {
+        console.log(err);
+      }
     }
   }
 };
