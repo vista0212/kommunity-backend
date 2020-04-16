@@ -29,20 +29,21 @@ export const typeDef = gql`
   }
 
   extend type Query {
-    getUser(token: String): User
+    getUser(token: String): User!
   }
 
   extend type Mutation {
     register(id: String, email: String, password: String, signKey: String): Boolean!
     login(id: String, password: String): UserWithToken!
     image(file: Upload!): Boolean!
+    test(content: String): Boolean!
   }
 `;
 
 const PW_CONFIG: { ITERATION: number; KEY_LENGTH: number; DIGEST: string } = {
   ITERATION: parseInt(process.env.PASSWORD_ENCRYPTION_ITERATION, 10),
   KEY_LENGTH: parseInt(process.env.PASSWORD_ENCRYPTION_KEY_LENGTH, 10),
-  DIGEST: process.env.PASSWORD_ENCRYPTION_DIGEST
+  DIGEST: process.env.PASSWORD_ENCRYPTION_DIGEST,
 };
 
 const passwordEncryption: (
@@ -60,16 +61,16 @@ const passwordEncryption: (
   return encryptionPassword;
 };
 
-const issueToken: (pk: User['pk']) => string = pk => {
+const issueToken: (pk: User['pk']) => string = (pk) => {
   const secretKey: string = process.env.TOKEN_SECRET;
 
   const token: string = jwt.sign(
     {
-      pk
+      pk,
     },
     secretKey,
     {
-      expiresIn: '1h'
+      expiresIn: '1h',
     }
   );
 
@@ -81,7 +82,7 @@ export const resolvers = {
     getUser: async (
       _: any,
       {
-        token
+        token,
       }: {
         token: string;
       }
@@ -95,7 +96,7 @@ export const resolvers = {
       if (!user) throwError('잘못된 요청입니다.');
 
       return user;
-    }
+    },
   },
   Mutation: {
     register: async (
@@ -104,7 +105,7 @@ export const resolvers = {
         id,
         email,
         password,
-        signKey
+        signKey,
       }: {
         id: User['id'];
         email: User['email'];
@@ -124,8 +125,8 @@ export const resolvers = {
       const user: User = await userRepository
         .findOne({
           where: {
-            signKey
-          }
+            signKey,
+          },
         })
         .catch(catchDBError());
 
@@ -141,7 +142,7 @@ export const resolvers = {
         email,
         password: encryptionPassword,
         passwordKey,
-        signKey: ''
+        signKey: '',
       });
 
       await user.save().catch(catchDBError());
@@ -152,7 +153,7 @@ export const resolvers = {
       _: any,
       {
         id,
-        password
+        password,
       }: {
         id: User['id'];
         password: User['password'];
@@ -172,7 +173,7 @@ export const resolvers = {
 
       return {
         user,
-        token
+        token,
       };
     },
     image: async (_: any, args: any) => {
@@ -185,7 +186,7 @@ export const resolvers = {
         const uploadParams = {
           Bucket: 'kommunity-s3',
           Key: Date.now().toString() + filename,
-          Body: fileStream
+          Body: fileStream,
         };
 
         await s3.upload(uploadParams).promise();
@@ -194,6 +195,10 @@ export const resolvers = {
       } catch (err) {
         console.log(err);
       }
-    }
-  }
+    },
+    test: async (_: any, { content }: { content: string }) => {
+      console.log(content);
+      return true;
+    },
+  },
 };

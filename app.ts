@@ -7,6 +7,7 @@ import * as cors from 'cors';
 
 import schema from './graphql/schema';
 import connectionOptions from './database/index';
+import { graphqlUploadExpress } from 'graphql-upload';
 
 const app: express.Application = express();
 
@@ -16,7 +17,7 @@ createConnection(connectionOptions)
   .then(() => {
     console.log('데이터베이스 연결 성공');
   })
-  .catch(err => {
+  .catch((err) => {
     console.log(err);
     process.exit(1);
   });
@@ -26,12 +27,10 @@ app.use(bodyParser.json());
 
 app.use(
   '/graphql',
+  graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }),
   graphqlHTTP({
     schema,
     graphiql: true,
-    formatError: err => {
-      return { message: err.message };
-    }
   })
 );
 

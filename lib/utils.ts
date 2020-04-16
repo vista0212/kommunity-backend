@@ -6,7 +6,7 @@ import { throwError } from './error';
 
 dotenv.config();
 
-export const verifyToken: (token: string) => User | void = token => {
+export const verifyToken: (token: string) => User | void = (token) => {
   const secretKey: string = process.env.TOKEN_SECRET;
 
   const decoded: User | void = jwt.verify(

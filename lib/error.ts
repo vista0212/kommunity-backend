@@ -7,5 +7,5 @@ export const catchDBError = () => (err: Error) => {
 };
 
 export const throwError = (msg: string) => {
-  throw new GraphQLError(msg);
+  throw new ApolloError(msg);
 };

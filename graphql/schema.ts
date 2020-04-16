@@ -4,6 +4,8 @@ import { merge } from 'lodash';
 import { gql } from 'apollo-server-express';
 
 import * as User from './user';
+import * as Board from './board';
+import * as Comment from './comment';
 
 const typeDef = gql`
   scalar Date
@@ -20,12 +22,12 @@ const typeDef = gql`
 
 const resolvers = {
   Query: {},
-  Mutation: {}
+  Mutation: {},
 };
 
 const schema: GraphQLSchema = makeExecutableSchema({
-  typeDefs: [typeDef, User.typeDef],
-  resolvers: merge(resolvers, User.resolvers)
+  typeDefs: [typeDef, User.typeDef, Board.typeDef, Comment.typeDef],
+  resolvers: merge(resolvers, User.resolvers, Board.resolvers, Comment.resolvers),
 });
 
 export default schema;

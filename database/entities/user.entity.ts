@@ -5,10 +5,13 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Repository
+  Repository,
+  OneToMany,
 } from 'typeorm';
 
 import { catchDBError } from '../../lib/error';
+import { Board } from './board.entity';
+import { Comment } from './comment.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -43,6 +46,12 @@ export class User extends BaseEntity {
   @Column('timestamptz')
   @UpdateDateColumn()
   public updatedAt: Date;
+
+  @OneToMany((type) => Board, (board) => board.user)
+  public board: Board[];
+
+  @OneToMany((type) => Comment, (comment) => comment.user)
+  public comment: Comment[];
 }
 
 export const findByPk: (
@@ -52,8 +61,8 @@ export const findByPk: (
   const user: User = await userRepository
     .findOne({
       where: {
-        pk
-      }
+        pk,
+      },
     })
     .catch(catchDBError());
 
@@ -67,8 +76,8 @@ export const findById: (
   const user: User = await userRepository
     .findOne({
       where: {
-        id
-      }
+        id,
+      },
     })
     .catch(catchDBError());
 
@@ -82,8 +91,8 @@ export const findByEmail: (
   const user: User = await userRepository
     .findOne({
       where: {
-        email
-      }
+        email,
+      },
     })
     .catch(catchDBError());
 
