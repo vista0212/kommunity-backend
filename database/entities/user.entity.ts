@@ -12,6 +12,7 @@ import {
 import { catchDBError } from '../../lib/error';
 import { Board } from './board.entity';
 import { Comment } from './comment.entity';
+import { BoardLike } from './boardLike.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -52,6 +53,9 @@ export class User extends BaseEntity {
 
   @OneToMany((type) => Comment, (comment) => comment.user)
   public comment: Comment[];
+
+  @OneToMany((type) => BoardLike, (boardLike) => boardLike.user)
+  public boardLike: BoardLike[];
 }
 
 export const findByPk: (

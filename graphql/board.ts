@@ -6,6 +6,7 @@ import { User, findByPk } from '../database/entities/user.entity';
 import { throwError, catchDBError } from '../lib/error';
 import { BoardImage } from '../database/entities/boardImage.entity';
 import s3 from '../lib/s3';
+import { BoardLike } from '../database/entities/boardLike.entity';
 
 export const typeDef = `
   type BoardImage {
@@ -14,16 +15,23 @@ export const typeDef = `
     image: String!
   }
 
+  type BoardLike {
+    pk: Int!
+    board_pk: Int!
+    user_pk: String!
+  }
+
   type Board {
     pk: Int!
     user_pk: String!
     content: String!
-    likes: Int!
     createdAt: Date!
     updatedAt: Date!
     comment: [Comment]
     user: User
     boardImage: [BoardImage]
+    boardLike: [BoardLike]
+    isLike: Boolean!
   }
 
   extend type Query {
@@ -33,6 +41,7 @@ export const typeDef = `
   extend type Mutation {
     postBoard(token: String!, content: String!): Board!
     postImage(token: String!, board_pk: Int, file: Upload): Boolean!
+    boardLike(token: String!, board_pk: Int): Boolean!
   }
 `;
 
@@ -59,14 +68,25 @@ export const resolvers = {
 
       const board: Board[] = await boardRepository
         .find({
-          relations: ['user', 'comment', 'comment.user', 'boardImage'],
+          relations: ['user', 'comment', 'comment.user', 'boardImage', 'boardLike'],
           order: {
             createdAt: 'DESC',
           },
         })
         .catch(catchDBError());
 
-      return board;
+      return board.map((board) => ({
+        pk: board.pk,
+        user_pk: board.user_pk,
+        content: board.content,
+        createdAt: board.createdAt,
+        updatedAt: board.updatedAt,
+        comment: board.comment,
+        user: board.user,
+        boardImage: board.boardImage,
+        boardLike: board.boardLike,
+        isLike: board.boardLike.some((like) => like.user_pk === user.pk),
+      }));
     },
   },
   Mutation: {
@@ -80,6 +100,10 @@ export const resolvers = {
         content: Board['content'];
       }
     ) => {
+      if (!content) {
+        throwError('글을 입력해주세요!');
+      }
+
       const userRepository: Repository<User> = getRepository(User);
       const boardRepository: Repository<Board> = getRepository(Board);
 
@@ -147,6 +171,55 @@ export const resolvers = {
           console.log(err);
           throwError('알 수 없는 오류');
         });
+
+      return true;
+    },
+    boardLike: async (
+      _: any,
+      {
+        token,
+        board_pk,
+      }: {
+        token: string;
+        board_pk: Board['pk'];
+      }
+    ) => {
+      const userRepository: Repository<User> = getRepository(User);
+      const boardRepository: Repository<Board> = getRepository(Board);
+      const boardLikeRepository: Repository<BoardLike> = getRepository(BoardLike);
+
+      const pk: User['pk'] = (verifyToken(token) as User).pk;
+
+      const user: User = await findByPk(userRepository, pk);
+      const board: Board = await boardRepository
+        .findOne({
+          where: {
+            pk: board_pk,
+          },
+        })
+        .catch(catchDBError());
+
+      if (!user || !board) {
+        throwError('잘못된 요청입니다!');
+      }
+
+      const result: BoardLike = await boardLikeRepository
+        .findOne({
+          where: {
+            board_pk: board.pk,
+            useR_pk: user.pk,
+          },
+        })
+        .catch(catchDBError());
+
+      result
+        ? result.remove().catch(catchDBError())
+        : await boardLikeRepository
+            .save({
+              board_pk,
+              user_pk: user.pk,
+            })
+            .catch(catchDBError());
 
       return true;
     },

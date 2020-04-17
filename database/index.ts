@@ -5,6 +5,7 @@ import { User } from './entities/user.entity';
 import { Board } from './entities/board.entity';
 import { BoardImage } from './entities/boardImage.entity';
 import { Comment } from './entities/comment.entity';
+import { BoardLike } from './entities/boardLike.entity';
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ const DB_CONFIG = {
 };
 
 const connectionOptions: ConnectionOptions = {
-  entities: [User, Board, BoardImage, Comment],
+  entities: [User, Board, BoardImage, Comment, BoardLike],
   type: 'mysql',
   host: DB_CONFIG.DB_HOST,
   database: DB_CONFIG.DB_NAME,

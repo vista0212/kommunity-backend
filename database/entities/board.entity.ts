@@ -13,6 +13,7 @@ import {
 import { User } from './user.entity';
 import { BoardImage } from './boardImage.entity';
 import { Comment } from './comment.entity';
+import { BoardLike } from './boardLike.entity';
 
 @Entity('boards')
 export class Board extends BaseEntity {
@@ -24,9 +25,6 @@ export class Board extends BaseEntity {
 
   @Column({ type: 'text', nullable: false })
   public content: string;
-
-  @Column({ type: 'integer', nullable: false, default: 0 })
-  public likes: number;
 
   @Column({ type: 'timestamptz', nullable: false })
   @CreateDateColumn()
@@ -51,4 +49,7 @@ export class Board extends BaseEntity {
 
   @OneToMany((type) => Comment, (comment) => comment.board)
   public comment: Comment[];
+
+  @OneToMany((type) => BoardLike, (boardLike) => boardLike.board)
+  public boardLike: BoardLike[];
 }
