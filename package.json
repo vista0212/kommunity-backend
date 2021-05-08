@@ -27,7 +27,7 @@
     "multer-s3": "^2.9.0",
     "mysql2": "^2.1.0",
     "randomstring": "^1.1.5",
-    "typeorm": "^0.2.24"
+    "typeorm": "^0.2.25"
   },
   "devDependencies": {
     "@types/aws-sdk": "^2.7.0",
